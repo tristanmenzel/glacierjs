@@ -1,0 +1,19 @@
+{
+  "name": "glacierjs",
+  "version": "1.0.2",
+  "description": "",
+  "main": "./index.js",
+  "typings": "./index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "copy-manifest": "cpx package.json dist",
+    "pack": "npm run build && npm run copy-manifest && npm pack ./dist",
+    "publish": "npm run build && npm run copy-manifest && npm publish ./dist"
+  },
+  "author": "Tristan Menzel",
+  "license": "ISC",
+  "devDependencies": {
+    "cpx": "^1.5.0",
+    "typescript": "^2.6.2"
+  }
+}

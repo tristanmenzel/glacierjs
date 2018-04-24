@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "module": "esnext",
+    "target": "es5",
+    "sourceMap": false,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "moduleResolution": "node",
+    "allowJs": false,
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "strict": true,
+    "strictNullChecks": true,
+    "baseUrl": "src",
+    "declaration": true,
+    "lib": [
+      "ES2017"
+    ],
+    "outDir": "dist"
+  },
+  "include": [
+    "./src/**/*.ts",
+    "./custom_typings/**/*.d.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}
