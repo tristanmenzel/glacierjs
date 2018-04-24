@@ -1,19 +1,25 @@
 {
   "name": "glacierjs",
-  "version": "1.0.2",
-  "description": "",
+  "version": "2.0.0",
+  "description": "A framework agnostic typed data store for client side applications.",
   "main": "./index.js",
   "typings": "./index.d.ts",
+  "readme": "readme.md",
+  "repository": "https://github.com/tristanmenzel/glacierjs",
   "scripts": {
-    "build": "tsc",
-    "copy-manifest": "cpx package.json dist",
-    "pack": "npm run build && npm run copy-manifest && npm pack ./dist",
-    "publish": "npm run build && npm run copy-manifest && npm publish ./dist"
+    "build": "tsc && npm run test && cpx ./package.json dist && cpx ./readme.md dist",
+    "test": "jest",
+    "test-watch": "jest --watch",
+    "pack": "npm run build  && npm pack ./dist",
+    "publish": "npm run build && npm publish ./dist"
   },
   "author": "Tristan Menzel",
-  "license": "ISC",
+  "license": "MIT",
   "devDependencies": {
+    "@types/jest": "^22.2.3",
     "cpx": "^1.5.0",
+    "jest": "^22.4.3",
+    "ts-jest": "^22.4.4",
     "typescript": "^2.6.2"
   }
 }
