@@ -58,3 +58,17 @@ test('State should be immutable if development mode is on', async () => {
   expect(store.state.nested.otherProp).toBe(3);
   expect(store.state.collection[0].test).toBe(2);
 });
+
+test('Immutable state does not affect primitives', async () => {
+  const store = CreateStore({
+    date: new Date(),
+    bool: true,
+    str: 'hello world',
+    num: 12
+  }, { developmentMode: true });
+
+  expect(store.state.date.getTime).toBeTruthy();
+  expect(store.state.bool === true).toBeTruthy();
+  expect(store.state.str.toUpperCase).toBeTruthy();
+  expect(store.state.num.toFixed).toBeTruthy();
+});
