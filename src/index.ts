@@ -85,7 +85,7 @@ const createReadonlyProxy = <T>(state: T): T => {
   return new Proxy(state as any, {
     get(target: T, property: keyof T) {
       let val: any = target[property];
-      if (val instanceof Object) {
+      if (val instanceof Object && !(val instanceof Date)) {
         return createReadonlyProxy(val as any);
       }
       return val;
