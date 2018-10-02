@@ -112,6 +112,18 @@ export class ExampleMiddleware<T> implements GlacierMiddleware<T> {
 const store = CreateStore<DemoState>({demoValue: 'Demo'}, {
     middleware: [
         new LoggingMiddleware<DemoState>(console.error, console.info),
-        new Examplemiddleware<DemoState>()]
+        new ExampleMiddleware<DemoState>()]
 })
 ```
+
+
+## Development mode
+
+You can pass an optional development mode switch when creating a store to turn on readonly [Proxies](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy)
+
+```ts
+const store = CreateStore<DemoState>({demoValue: 'Demo'}, { developmentMode: true });
+```
+
+These proxies will help you detect when you are being naughty and mutating state however they shouldn't be necessary in
+production.

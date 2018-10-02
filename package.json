@@ -1,6 +1,6 @@
 {
   "name": "glacierjs",
-  "version": "2.0.0",
+  "version": "3.0.0-alpha",
   "description": "A framework agnostic typed data store for client side applications.",
   "main": "./index.js",
   "typings": "./index.d.ts",
@@ -20,6 +20,6 @@
     "cpx": "^1.5.0",
     "jest": "^22.4.3",
     "ts-jest": "^22.4.4",
-    "typescript": "^2.6.2"
+    "typescript": "^2.9.2"
   }
 }

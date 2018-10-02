@@ -2,12 +2,13 @@ export interface WorkTrackerLike {
   track<T>(promise: Promise<T>): Promise<T>;
 }
 
-export declare type Dispatcher<T> = (action: Action<T>, tracker?: WorkTrackerLike) => Promise<T>;
+export declare type Dispatcher<T> = (action: Action<T>, tracker?: WorkTrackerLike) => Promise<void>;
 export declare type Action<T> = (state: T) => Promise<T>;
+
 
 export interface Store<T> {
   dispatch: Dispatcher<T>;
-  state: T;
+  readonly state: T;
 
   withDefaultTracker(defaultTracker: WorkTrackerLike): Store<T>;
 }
@@ -36,6 +37,7 @@ const CreateProxy = <T>(store: Store<T>, defaultTracker: WorkTrackerLike): Store
 export interface GlacierOptions<T> {
   middleware?: GlacierMiddleware<T>[]
   defaultTracker?: WorkTrackerLike;
+  developmentMode?: boolean;
 }
 
 
@@ -78,17 +80,42 @@ const applyMiddleware = async <T>(state: T, action: Action<T>, middleware: Glaci
   }
 };
 
+const createReadonlyProxy = <T>(state: T): T => {
+  if (typeof state !== "object") return state;
+  return new Proxy(state as any, {
+    get(target: T, property: keyof T) {
+      let val = target[property];
+      if (typeof val === "object") {
+        return createReadonlyProxy(val as any);
+      }
+      return val;
+    },
+    set(target: T, property: keyof T, value: any): boolean {
+      console.warn(`Property ${property} is readonly and cannot be set`);
+      return false;
+    }
+  });
+};
 
 export const CreateStore = <T>(initialState: T,
                                options?: GlacierOptions<T>): Store<T> => {
-  let theStorySoFar = Promise.resolve<T>(initialState);
+  let theStorySoFar = Promise.resolve();
+  let state: T = options && options.developmentMode
+    ? createReadonlyProxy(initialState)
+    : initialState;
+
   const store: Store<T> = {
-    state: initialState,
+    get state() {
+      return state;
+    },
     dispatch: async (action: Action<T>, tracker?: WorkTrackerLike) => {
       theStorySoFar = theStorySoFar
         .then(async () => {
-          store.state = await applyMiddleware(store.state, action, options && options.middleware || []);
-          return store.state;
+          let newState = await applyMiddleware(state as T, action, options && options.middleware || []);
+          if (options && options.developmentMode) {
+            newState = createReadonlyProxy(newState as any);
+          }
+          state = newState;
         });
       return await trackMeMaybe(tracker, options && options.defaultTracker, theStorySoFar);
     },
