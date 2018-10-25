@@ -64,13 +64,11 @@ test('Error middleware is called', async () => {
 
   const p1 = store.dispatch(action.action);
   action.reject();
-  await p1;
+  await p1.catch(() => "Suppress");
 
   expect(eventsStore.length).toBe(2);
   expect(eventsStore[1][1]).toBe('onError');
 });
-
-
 
 
 test('Before middleware is called left to right', async () => {
@@ -78,7 +76,7 @@ test('Before middleware is called left to right', async () => {
 
   const store = CreateStore({ prop: 'abc' }, {
     middleware: [new AggregatingMiddleware<TestState>(eventsStore, 'Middleware1'),
-    new AggregatingMiddleware<TestState>(eventsStore, 'Middleware2')]
+      new AggregatingMiddleware<TestState>(eventsStore, 'Middleware2')]
   });
 
   expect(eventsStore.length).toBe(0);
@@ -125,7 +123,7 @@ test('Error middleware is called left to right', async () => {
 
   const p1 = store.dispatch(action.action);
   action.reject();
-  await p1;
+  await p1.catch(() => "Suppress");
 
   expect(eventsStore.length).toBe(4);
   expect(eventsStore[2][0]).toBe('Middleware1');
