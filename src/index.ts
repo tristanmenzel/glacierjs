@@ -74,7 +74,7 @@ const applyMiddleware = async <T>(state: T, action: Action<T>, middleware: Glaci
       let res = m.onError(state, finalState, action, err);
       if (res) await res;
     }
-    return state;
+    throw err;
   }
 };
 
