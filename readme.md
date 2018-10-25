@@ -112,6 +112,6 @@ export class ExampleMiddleware<T> implements GlacierMiddleware<T> {
 const store = CreateStore<DemoState>({demoValue: 'Demo'}, {
     middleware: [
         new LoggingMiddleware<DemoState>(console.error, console.info),
-        new Examplemiddleware<DemoState>()]
+        new ExampleMiddleware<DemoState>()]
 })
 ```

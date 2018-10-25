@@ -1,31 +1,33 @@
-
 version: '1.0.{build}'
 image: Visual Studio 2017
+environment:
+   npm_token:
+      secure: PRRxGHz+/4SC8HByTn/yOC0c6MNYXCa2CYaUdUWa8mRKtk5IMIyw9WLDilpgvptq
 init:
-  # Good practise, because Windows line endings are different from Unix/Linux ones
-  - cmd: git config --global core.autocrlf true
+# Good practise, because Windows line endings are different from Unix/Linux ones
+- cmd: git config --global core.autocrlf true
 install:
-  # Install latest node and npm
-  - ps: Install-Product node 
-  - cmd: npm i npm@latest -g
+# Install latest node and npm
+- ps: Install-Product node
+- cmd: npm i npm@latest -g
 before_build:
-  # Restore packages
-  - cmd: npm ci
+# Restore packages
+- cmd: npm ci
 build_script:
-  # Build
-  - cmd: npm run build
-  - cmd: npm run test  
-  - cmd: npm pack ./dist
+# Package lib
+- cmd: npm run pack
 after_build:
-  # For once the build has completed
+# For once the build has completed
 artifacts:
- - path: '\glacierjs-*.tgz'
-   name: Package
-   type: File
+- path: '\glacierjs-*.tgz'
+  name: Package
+  type: File
 clone_depth: 1
 test_script:
-  # run the unit tests
-  # - cmd: npm run test
+# run the unit tests
+ - cmd: npm run test
 on_finish:
-  # any cleanup in here
-on_success: 
+# any cleanup in here
+after_deploy:
+- ps: Add-Content "$ENV:APPVEYOR_BUILD_FOLDER\.npmrc" "//registry.npmjs.org/:_authToken=$ENV:NPM_TOKEN"
+- ps: iex "npm publish ./dist"

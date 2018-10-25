@@ -13,9 +13,10 @@
     "strict": true,
     "strictNullChecks": true,
     "baseUrl": "src",
+    "esModuleInterop": true,
     "declaration": true,
     "lib": [
-      "ES2017"
+      "es2015"
     ],
     "outDir": "dist"
   },

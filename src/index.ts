@@ -74,23 +74,30 @@ const applyMiddleware = async <T>(state: T, action: Action<T>, middleware: Glaci
       let res = m.onError(state, finalState, action, err);
       if (res) await res;
     }
-    return state;
+    return Promise.reject(err);
   }
 };
 
 
 export const CreateStore = <T>(initialState: T,
                                options?: GlacierOptions<T>): Store<T> => {
-  let theStorySoFar = Promise.resolve<T>(initialState);
+  let theStorySoFar = Promise.resolve();
   const store: Store<T> = {
     state: initialState,
-    dispatch: async (action: Action<T>, tracker?: WorkTrackerLike) => {
-      theStorySoFar = theStorySoFar
-        .then(async () => {
-          store.state = await applyMiddleware(store.state, action, options && options.middleware || []);
-          return store.state;
-        });
-      return await trackMeMaybe(tracker, options && options.defaultTracker, theStorySoFar);
+    dispatch: (action: Action<T>, tracker?: WorkTrackerLike) => {
+      return new Promise<T>((resolve, reject) => {
+        theStorySoFar = theStorySoFar
+          .then(async () => {
+            try {
+              store.state = await applyMiddleware(store.state, action, options && options.middleware || []);
+              resolve(store.state);
+            } catch (err) {
+              reject(err)
+            }
+          });
+        trackMeMaybe(tracker, options && options.defaultTracker, theStorySoFar);
+      })
+
     },
     withDefaultTracker: dt => CreateProxy(store, dt)
   };
