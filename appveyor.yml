@@ -1,0 +1,33 @@
+
+version: '1.0.{build}'
+image: Visual Studio 2017
+branches:
+  all
+init:
+  # Good practise, because Windows line endings are different from Unix/Linux ones
+  - cmd: git config --global core.autocrlf true
+install:
+  # Install latest node and npm
+  - ps: Install-Product node 
+  - cmd: npm i npm@latest -g
+before_build:
+  # Restore packages
+  - cmd: npm ci
+build_script:
+  # Build
+  - cmd: npm run build
+  - cmd: npm run test  
+  - cmd: npm pack ./dist
+after_build:
+  # For once the build has completed
+artifacts:
+ - path: '\glacierjs-*.tgz'
+   name: Package
+   type: File
+clone_depth: 1
+test_script:
+  # run the unit tests
+  # - cmd: npm run test
+on_finish:
+  # any cleanup in here
+on_success: 
