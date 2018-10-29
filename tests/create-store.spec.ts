@@ -1,4 +1,4 @@
-import { CreateStore, WorkTrackerLike } from "../src";
+import { CreateStore } from "../src";
 
 export interface TestState {
   prop: string;
