@@ -9,21 +9,24 @@ class FakeTracker implements WorkTrackerLike {
     this.wasCalled = true;
     return promise;
   }
+
+  get complete() {
+    return true;
+  }
 }
 
 test('Dispatch action with no tracker should use default', async () => {
-  const fakeDefaultTracker = new FakeTracker();
   const store = CreateStore({ prop: 'Hello world' }, {
-    defaultTracker: fakeDefaultTracker
+    defaultTracker: new FakeTracker()
   });
 
-  expect(fakeDefaultTracker.wasCalled).toBe(false);
+  expect((store.tracker as FakeTracker).wasCalled).toBe(false);
   expect(store.state.prop).toBe('Hello world');
 
   await store.dispatch(UpdateProp('New value'));
 
   expect(store.state.prop).toBe('New value');
-  expect(fakeDefaultTracker.wasCalled).toBe(true);
+  expect((store.tracker as FakeTracker).wasCalled).toBe(true);
 });
 test('Dispatch action with tracker should use provided tracker and not default', async () => {
   const fakeDefaultTracker = new FakeTracker();
@@ -52,15 +55,18 @@ test('Dispatch action with store proxy should use overridden default tracker', a
 
   const overriddenStore = store.withDefaultTracker(fakeOverrideTracker);
 
-  expect(fakeDefaultTracker.wasCalled).toBe(false);
-  expect(fakeOverrideTracker.wasCalled).toBe(false);
+  expect(store.tracker).toBe(fakeDefaultTracker);
+  expect(overriddenStore.tracker).toBe(fakeOverrideTracker);
+
+  expect((store.tracker as FakeTracker).wasCalled).toBe(false);
+  expect((overriddenStore.tracker as FakeTracker).wasCalled).toBe(false);
   expect(store.state.prop).toBe('Hello world');
 
   await overriddenStore.dispatch(UpdateProp('New value'));
 
   expect(store.state.prop).toBe('New value');
-  expect(fakeDefaultTracker.wasCalled).toBe(false);
-  expect(fakeOverrideTracker.wasCalled).toBe(true);
+  expect((store.tracker as FakeTracker).wasCalled).toBe(false);
+  expect((overriddenStore.tracker as FakeTracker).wasCalled).toBe(true);
 
 });
 
