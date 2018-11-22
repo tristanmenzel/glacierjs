@@ -2,6 +2,8 @@ import { BehaviorSubjectLike, Subscribable, Unsubscribable } from "./rxjs-integr
 
 export interface WorkTrackerLike {
   track<T>(promise: Promise<T>): Promise<T>;
+
+  readonly complete: boolean;
 }
 
 
@@ -10,9 +12,11 @@ export declare type Action<T> = (state: T) => Promise<T>;
 
 export interface Store<T> {
   dispatch: Dispatcher<T>;
-  state: T;
+  readonly state: T;
 
   subscribe(next?: (value: T) => void, error?: (error: any) => void, complete?: () => void): Unsubscribable;
+
+  readonly tracker: WorkTrackerLike | undefined;
 
   withDefaultTracker(defaultTracker: WorkTrackerLike): Store<T>;
 }
@@ -30,6 +34,12 @@ const CreateProxy = <T>(store: Store<T>, defaultTracker: WorkTrackerLike): Store
   storeProxy.dispatch = (action: Action<T>, tracker?: WorkTrackerLike) => {
     return store.dispatch(action, tracker || defaultTracker);
   };
+  Object.defineProperty(storeProxy, 'tracker', {
+    configurable: true,
+    get() {
+      return defaultTracker
+    }
+  });
   return storeProxy;
 };
 
@@ -111,6 +121,7 @@ export const CreateStore = <T>(initialState: T,
     get state() {
       return subject.value;
     },
+    tracker: undefined,
     subscribe(...args: any[]) {
       if (!options.useObservables)
         throw new Error('Must set options.useObservables to true to subscribe to changes');
@@ -129,10 +140,16 @@ export const CreateStore = <T>(initialState: T,
           });
         trackMeMaybe(tracker, options && options.defaultTracker, theStorySoFar);
       })
-
     },
     withDefaultTracker: dt => CreateProxy(store, dt)
   };
+  Object.defineProperty(store, 'tracker', {
+    configurable: true,
+    get(){
+      return options && options.defaultTracker
+    }
+  });
+
   return store;
 };
 
