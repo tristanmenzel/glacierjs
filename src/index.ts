@@ -1,5 +1,7 @@
 import { BehaviorSubjectLike, Subscribable, Unsubscribable } from "./rxjs-integration";
 
+export { ComputedFrom, configureComputedFrom } from "./computed-from";
+
 export interface WorkTrackerLike {
   track<T>(promise: Promise<T>): Promise<T>;
 

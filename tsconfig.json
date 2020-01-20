@@ -16,7 +16,8 @@
     "esModuleInterop": true,
     "declaration": true,
     "lib": [
-      "es2015"
+      "dom",
+      "es2019"
     ],
     "outDir": "dist"
   },
