@@ -20,7 +20,7 @@ export function ComputedFrom(property: string, ...properties: string[]) {
       const original = descriptor.get;
       descriptor.get = function() {
         const instance: any = this;
-        const cache: IComputedCache = instance[cacheKey] || (instance[cacheKey] = { prevKey: undefined });
+        const cache: ComputedCache = instance[cacheKey] || (instance[cacheKey] = { prevKey: undefined });
 
         const references = accessors.map(a => a(instance));
         if (cache.prevKey === undefined || !references.every((r, i) => r === cache.prevKey[i])) {
@@ -33,14 +33,12 @@ export function ComputedFrom(property: string, ...properties: string[]) {
         return cache.prevVal;
       };
     } else {
-      throw new Error("Only put a computedFrom() decorator on a get accessor.");
+      throw new Error("Only put a ComputedFrom() decorator on a get accessor.");
     }
   };
 }
 
-
-
-interface IComputedCache {
+interface ComputedCache {
   prevKey: any[];
   prevVal: any;
 }
