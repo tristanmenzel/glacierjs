@@ -5,7 +5,7 @@ import { UpdateProp } from "./create-store.spec";
 class FakeTracker implements WorkTrackerLike {
   wasCalled: boolean = false;
 
-  track<T>(promise: Promise<T>): Promise<T> {
+  track<TState>(promise: Promise<TState>): Promise<TState> {
     this.wasCalled = true;
     return promise;
   }

@@ -3,20 +3,20 @@ import { TestState, UpdateProp } from "./create-store.spec";
 import { CreateExternallyResolvableAction } from "./ordering.spec";
 
 
-class AggregatingMiddleware<T> implements GlacierMiddleware<T> {
+class AggregatingMiddleware<TState> implements GlacierMiddleware<TState> {
   constructor(private container: any[][], private identifier: string) {
 
   }
 
-  beforeAction(state: T, action: Action<T>) {
+  beforeAction(state: TState, action: Action<TState>) {
     this.container.push([this.identifier, 'beforeAction', state, action]);
   }
 
-  afterAction(state: T, action: Action<T>) {
+  afterAction(state: TState, action: Action<TState>) {
     this.container.push([this.identifier, 'afterAction', state, action]);
   }
 
-  onError(originalState: T, partiallyUpdatedState: T, action: Action<T>, error: any) {
+  onError(originalState: TState, partiallyUpdatedState: TState, action: Action<TState>, error: any) {
     this.container.push([this.identifier, 'onError', originalState, partiallyUpdatedState, action, error]);
   }
 }

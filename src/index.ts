@@ -3,38 +3,38 @@ import { BehaviorSubjectLike, Subscribable, Unsubscribable } from './rxjs-integr
 export { ComputedFrom, configureComputedFrom } from './computed-from'
 
 export interface WorkTrackerLike {
-  track<T>(promise: Promise<T>): Promise<T>;
+  track<TState>(promise: Promise<TState>): Promise<TState>;
 
   readonly complete: boolean;
 }
 
 
-export declare type Dispatcher<T> = (action: Action<T>, tracker?: WorkTrackerLike) => Promise<T>;
-export declare type Action<T> = (state: T) => Promise<T>;
+export declare type Dispatcher<TState> = <TReturn>(action: Action<TState, TReturn>, tracker?: WorkTrackerLike) => Promise<TReturn>;
+export declare type Action<TState, TReturn = void> = (state: TState) => Promise<TState | [TState, TReturn]>;
 
-export interface Store<T> {
-  dispatch: Dispatcher<T>;
-  readonly state: T;
+export interface Store<TState> {
+  dispatch: Dispatcher<TState>;
+  readonly state: TState;
 
-  subscribe(next?: (value: T) => void, error?: (error: any) => void, complete?: () => void): Unsubscribable;
+  subscribe(next?: (value: TState) => void, error?: (error: any) => void, complete?: () => void): Unsubscribable;
 
   readonly tracker: WorkTrackerLike | undefined;
 
-  withDefaultTracker(defaultTracker: WorkTrackerLike): Store<T>;
+  withDefaultTracker(defaultTracker: WorkTrackerLike): Store<TState>;
 }
 
-export class StoreBase<T> implements Store<T> {
-  private readonly store: Store<T>
+export class StoreBase<TState> implements Store<TState> {
+  private readonly store: Store<TState>
 
-  get dispatch(): Dispatcher<T> {
+  get dispatch(): Dispatcher<TState> {
     return this.store.dispatch
   }
 
-  get state(): T {
+  get state(): TState {
     return this.store.state
   };
 
-  get subscribe(): (next?: (value: T) => void, error?: (error: any) => void, complete?: () => void) => Unsubscribable {
+  get subscribe(): (next?: (value: TState) => void, error?: (error: any) => void, complete?: () => void) => Unsubscribable {
     return this.store.subscribe
   }
 
@@ -43,26 +43,26 @@ export class StoreBase<T> implements Store<T> {
   }
 
 
-  get withDefaultTracker(): (defaultTracker: WorkTrackerLike) => Store<T> {
+  get withDefaultTracker(): (defaultTracker: WorkTrackerLike) => Store<TState> {
     return this.store.withDefaultTracker
   }
 
-  constructor(initialState: T, options?: GlacierOptions<T>) {
-    this.store = CreateStore<T>(initialState, options)
+  constructor(initialState: TState, options?: GlacierOptions<TState>) {
+    this.store = CreateStore<TState>(initialState, options)
   }
 }
 
-export interface GlacierMiddleware<T> {
-  beforeAction?(state: T, action: Action<T>): void | Promise<void | T>;
+export interface GlacierMiddleware<TState> {
+  beforeAction?(state: TState, action: Action<TState, any>): void | Promise<void | TState>;
 
-  afterAction?(state: T, action: Action<T>): void | Promise<void | T>;
+  afterAction?(state: TState, action: Action<TState, any>): void | Promise<void | TState>;
 
-  onError?(originalState: T, partiallyUpdatedState: T, action: Action<T>, error: any): void | Promise<void>;
+  onError?(originalState: TState, partiallyUpdatedState: TState, action: Action<TState, any>, error: any): void | Promise<void>;
 }
 
-const CreateProxy = <T>(store: Store<T>, defaultTracker: WorkTrackerLike): Store<T> => {
-  const storeProxy: Store<T> = Object.create(store)
-  storeProxy.dispatch = (action: Action<T>, tracker?: WorkTrackerLike) => {
+const CreateProxy = <TState>(store: Store<TState>, defaultTracker: WorkTrackerLike): Store<TState> => {
+  const storeProxy: Store<TState> = Object.create(store)
+  storeProxy.dispatch = <TReturn>(action: Action<TState, TReturn>, tracker?: WorkTrackerLike) => {
     return store.dispatch(action, tracker || defaultTracker)
   }
   Object.defineProperty(storeProxy, 'tracker', {
@@ -74,15 +74,15 @@ const CreateProxy = <T>(store: Store<T>, defaultTracker: WorkTrackerLike): Store
   return storeProxy
 }
 
-export interface GlacierOptions<T> {
-  middleware?: GlacierMiddleware<T>[]
+export interface GlacierOptions<TState> {
+  middleware?: GlacierMiddleware<TState>[]
   defaultTracker?: WorkTrackerLike;
   useObservables?: boolean;
-  behaviorSubject?: { new(state: T): BehaviorSubjectLike<T> }
+  behaviorSubject?: { new(state: TState): BehaviorSubjectLike<TState> }
 }
 
 
-const trackMeMaybe = <T>(providedTracker: WorkTrackerLike | undefined, defaultTracker: WorkTrackerLike | undefined, promise: Promise<T>): Promise<T> => {
+const trackMeMaybe = <TState>(providedTracker: WorkTrackerLike | undefined, defaultTracker: WorkTrackerLike | undefined, promise: Promise<TState>): Promise<TState> => {
   if (providedTracker) {
     return providedTracker.track(promise)
   } else if (defaultTracker) {
@@ -91,7 +91,7 @@ const trackMeMaybe = <T>(providedTracker: WorkTrackerLike | undefined, defaultTr
   return promise
 }
 
-const resOrDefault = async <T>(res: void | Promise<void | T>, defaultValue: T): Promise<T> => {
+const resOrDefault = async <TState>(res: void | Promise<void | TState>, defaultValue: TState): Promise<TState> => {
   if (!res) {
     return defaultValue
   }
@@ -99,8 +99,13 @@ const resOrDefault = async <T>(res: void | Promise<void | T>, defaultValue: T): 
   return promRes || defaultValue
 }
 
+const convertToTuple = <TState, TReturn = void>(result: TState | [TState, TReturn]): [TState, TReturn] => {
+  if(Array.isArray(result))
+    return result;
+  return [result, undefined as any]
+}
 
-const applyMiddleware = async <T>(state: T, action: Action<T>, middleware: GlacierMiddleware<T>[]): Promise<T> => {
+const applyMiddleware = async <TState, TReturn>(state: TState, action: Action<TState, TReturn>, middleware: GlacierMiddleware<TState>[]): Promise<[TState, TReturn]> => {
   let finalState = state
   try {
     for (let m of middleware) {
@@ -109,14 +114,15 @@ const applyMiddleware = async <T>(state: T, action: Action<T>, middleware: Glaci
       }
       finalState = await resOrDefault(m.beforeAction(finalState, action), finalState)
     }
-    finalState = await action(finalState)
+    let returnValue: TReturn
+    [finalState, returnValue] = convertToTuple(await action(finalState))
     for (let m of [...middleware].reverse()) {
       if (!m.afterAction) {
         continue
       }
       finalState = await resOrDefault(m.afterAction(finalState, action), finalState)
     }
-    return finalState
+    return [finalState, returnValue]
   } catch (err) {
     for (let m of middleware) {
       if (!m.onError) {
@@ -131,7 +137,7 @@ const applyMiddleware = async <T>(state: T, action: Action<T>, middleware: Glaci
   }
 }
 
-const createSubject = <T>(options: GlacierOptions<T>, initialState: T): BehaviorSubjectLike<T> => {
+const createSubject = <TState>(options: GlacierOptions<TState>, initialState: TState): BehaviorSubjectLike<TState> => {
   if (options.useObservables) {
     if (!options.behaviorSubject) {
       throw new Error('Must provide an implementation of BehaviorSubject when useObservables is true. See `options.behaviorSubject`')
@@ -140,10 +146,10 @@ const createSubject = <T>(options: GlacierOptions<T>, initialState: T): Behavior
   } else {
     let state = initialState
     return {
-      next(newState: T) {
+      next(newState: TState) {
         state = newState
       },
-      asObservable(): Subscribable<T> {
+      asObservable(): Subscribable<TState> {
         throw new Error('Not Implemented')
       },
       get value() {
@@ -154,11 +160,11 @@ const createSubject = <T>(options: GlacierOptions<T>, initialState: T): Behavior
 }
 
 
-export const CreateStore = <T>(initialState: T,
-  options: GlacierOptions<T> = {}): Store<T> => {
+export const CreateStore = <TState>(initialState: TState,
+  options: GlacierOptions<TState> = {}): Store<TState> => {
   let theStorySoFar = Promise.resolve()
   let subject = createSubject(options, initialState)
-  const store: Store<T> = {
+  const store: Store<TState> = {
     get state() {
       return subject.value
     },
@@ -169,13 +175,14 @@ export const CreateStore = <T>(initialState: T,
       }
       return subject.asObservable().subscribe(...args)
     },
-    dispatch: (action: Action<T>, tracker?: WorkTrackerLike) => {
-      return new Promise<T>((resolve, reject) => {
+    dispatch: <TReturn = void>(action: Action<TState, TReturn>, tracker?: WorkTrackerLike) => {
+      return new Promise<TReturn>((resolve, reject) => {
         theStorySoFar = theStorySoFar
           .then(async () => {
             try {
-              subject.next(await applyMiddleware(store.state, action, options && options.middleware || []))
-              resolve(store.state)
+              const [state, returnValue] = await applyMiddleware(store.state, action, options && options.middleware || [])
+              subject.next(state)
+              resolve(returnValue)
             } catch (err) {
               reject(err)
             }
@@ -195,28 +202,28 @@ export const CreateStore = <T>(initialState: T,
   return store
 }
 
-export class LoggingMiddleware<T> implements GlacierMiddleware<T> {
+export class LoggingMiddleware<TState> implements GlacierMiddleware<TState> {
 
-  constructor(private errorLog: (logText: string, error: any, context: { originalState: T, partiallyUpdatedState: T, action: Action<T> }) => void,
-    private infoLog?: (logText: string, context: { state: T, action: Action<T> }) => void) {
+  constructor(private errorLog: (logText: string, error: any, context: { originalState: TState, partiallyUpdatedState: TState, action: Action<TState> }) => void,
+    private infoLog?: (logText: string, context: { state: TState, action: Action<TState> }) => void) {
 
   }
 
-  beforeAction(state: T, action: Action<T>) {
+  beforeAction(state: TState, action: Action<TState>) {
     if (!this.infoLog) {
       return
     }
     this.infoLog('Glacier: beforeAction', { state, action })
   }
 
-  afterAction(state: T, action: Action<T>) {
+  afterAction(state: TState, action: Action<TState>) {
     if (!this.infoLog) {
       return
     }
     this.infoLog('Glacier: afterAction', { state, action })
   }
 
-  onError(originalState: T, partiallyUpdatedState: T, action: Action<T>, error: any) {
+  onError(originalState: TState, partiallyUpdatedState: TState, action: Action<TState>, error: any) {
     this.errorLog('Glacier: onError', error, { originalState, partiallyUpdatedState, action });
   }
 }

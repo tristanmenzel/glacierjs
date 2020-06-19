@@ -1,6 +1,6 @@
 {
   "name": "glacierjs",
-  "version": "4.2.0",
+  "version": "5.0.0-alpha",
   "description": "A framework agnostic typed data store for client side applications.",
   "main": "./index.js",
   "typings": "./index.d.ts",
@@ -9,9 +9,7 @@
   "scripts": {
     "build": "tsc && npm run test && cpx ./package.json dist && cpx ./readme.md dist",
     "test": "jest",
-    "test-watch": "jest --watch",
-    "pack": "npm run build  && npm pack ./dist",
-    "publish": "npm run build && npm publish ./dist"
+    "test-watch": "jest --watch"
   },
   "author": "Tristan Menzel",
   "license": "MIT",

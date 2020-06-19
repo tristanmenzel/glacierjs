@@ -52,14 +52,14 @@ store.dispatch(UpdateStateWithFixedValue).then(()=>{
 Define an action which takes additional args (Action creators)
 
 ```ts
-const UpdateStateWithValue = (value: string): Action<T> => async (state: DemoState) => {
+const UpdateStateWithValue = (value: string): Action<TState> => async (state: DemoState) => {
   return {
     ...state,
     demoValue: value
   };
 }
 
-const UpdateStateWithServerValue = (someService: {getValue():Promise<string>}): Action<T> => async  (state: DemoState) => {
+const UpdateStateWithServerValue = (someService: {getValue():Promise<string>}): Action<TState> => async  (state: DemoState) => {
   let value = await someService.getValue();
   return {
     ...state,
@@ -72,15 +72,42 @@ Invoke the action creator (the outer func) and then dispatch the returned action
 
 ```ts
 store.dispatch(UpdateStateWithValue('Different value')).then(()=>{
-   // expect(store.state.demoValue).toBe('Different value');    
+   expect(store.state.demoValue).toBe('Different value');    
 });
 
 const fakeService = {getValue(){return Promise.resolve('Async value')}};
 
 store.dispatch(UpdateStateWithServerValue(fakeService)).then(()=>{
-   // expect(store.state.demoValue).toBe('Async value');    
+   expect(store.state.demoValue).toBe('Async value');    
 });
 ```
+
+Create an action which returns a tuple
+
+```ts
+export const UpdateStateAndReturnValue = (api: ApiClient) => async (): Promise<[DemoState, number]> => { 
+ const entity = await api.createEntity(...);
+ return [{
+    ...state,
+    demoValue: entity.name
+  }, entity.id];
+}
+```
+
+
+```ts
+
+const api = {
+  createEntity() {
+    return Promise.resolve({name: "new entity", id: Math.random()});
+  }
+};
+
+const id = await store.dispatch(UpdateStateAndReturnValue(api));
+expect(typeof id).toBe('number');
+expect(store.state.demoValue).toBe('new entity');    
+```
+
 
 ## Middleware
 
@@ -92,19 +119,19 @@ Middleware can optionally be provided to the `CreateStore` function.
 
 
 ```ts
-export class ExampleMiddleware<T> implements GlacierMiddleware<T> {
-  beforeAction(state: T, action: Action<T>) {
-      // Do something, then return void OR a Promise<void> OR a Promise<T> where
+export class ExampleMiddleware<TState> implements GlacierMiddleware<TState> {
+  beforeAction(state: TState, action: Action<TState>) {
+      // Do something, then return void OR a Promise<void> OR a Promise<TState> where
       // T is your state. This value will be passed to proceeding middleware and the action
   }
 
-  afterAction(state: T, action: Action<T>) {
-      // Do something, then return void OR a Promise<void> OR a Promise<T> where
+  afterAction(state: TState, action: Action<TState>) {
+      // Do something, then return void OR a Promise<void> OR a Promise<TState> where
       // T is your state. This value will be passed to proceeding middleware and will be returned
       // as the action result.
   }
 
-  onError(originalState: T, partiallyUpdatedState: T, action: Action<T>, error: any) {
+  onError(originalState: TState, partiallyUpdatedState: TState, action: Action<TState>, error: any) {
       // Log the error somewhere, then return void or a Promise<void>
   }
 }

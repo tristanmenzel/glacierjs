@@ -1,16 +1,16 @@
 import { Action, CreateStore } from "../src";
 import { TestState } from "./create-store.spec";
 
-export interface ExternallyResolvableAction<T> {
+export interface ExternallyResolvableAction<TState> {
   resolve(): void;
 
   reject(): void;
 
-  action: Action<T>;
+  action: Action<TState>;
 }
 
-export const CreateExternallyResolvableAction = <T>(action: Action<T>): ExternallyResolvableAction<T> => {
-  let res: ExternallyResolvableAction<T> = {
+export const CreateExternallyResolvableAction = <TState>(action: Action<TState>): ExternallyResolvableAction<TState> => {
+  let res: ExternallyResolvableAction<TState> = {
     resolve: null as any,
     reject: null as any,
     action: null as any
@@ -19,7 +19,7 @@ export const CreateExternallyResolvableAction = <T>(action: Action<T>): External
     res.resolve = resolve;
     res.reject = () => reject('Action rejected');
   });
-  res.action = async (state: T) => {
+  res.action = async (state: TState) => {
     await p;
     return await action(state);
   };
